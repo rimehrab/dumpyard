@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mehrab's Dumpyard</title>
+    <style>
+        :root {
+            --background: #ffffff;
+            --foreground: #09090b;
+            --primary: #18181b;
+            --secondary: #f4f4f5;
+            --muted: #71717a;
+            --border: #e4e4e7;
+            --radius: 0.75rem;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background: #09090b;
+                --foreground: #ffffff;
+                --primary: #f4f4f5;
+                --secondary: #27272a;
+                --muted: #a1a1aa;
+                --border: #27272a;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--background);
+            color: var(--foreground);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .modern-title {
+            text-align: center;
+            margin: 2rem 0 3rem;
+            animation: titleAppear 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            opacity: 0;
+        }
+
+        .title-main {
+            display: block;
+            font-size: 2.8rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--foreground);
+        }
+
+        .title-accent {
+            display: block;
+            font-size: 3.2rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, var(--primary), var(--muted));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin: 0.5rem 0;
+        }
+
+        .title-sub {
+            font-size: 1.1rem;
+            color: var(--muted);
+            font-weight: 500;
+            margin-top: 0.75rem;
+        }
+
+        #file-list {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            gap: 1rem;
+        }
+
+        .file-item {
+            background: var(--secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .file-item:hover {
+            background: var(--background);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .file-item a {
+            text-decoration: none;
+            color: var(--foreground);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .file-icon {
+            width: 24px;
+            height: 24px;
+            color: var(--primary);
+        }
+
+        .file-name {
+            font-weight: 500;
+            font-size: 1.1rem;
+            flex-grow: 1;
+        }
+
+        .external-link-icon {
+            width: 16px;
+            height: 16px;
+            color: var(--muted);
+            transition: opacity 0.2s;
+        }
+
+        .file-item:hover .external-link-icon {
+            color: var(--primary);
+            opacity: 1;
+        }
+
+        .loading, .error {
+            text-align: center;
+            padding: 2rem;
+            color: var(--muted);
+        }
+
+        .error {
+            color: #dc2626;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .modern-title {
+                margin: 1rem 0 2rem;
+            }
+            
+            .title-main {
+                font-size: 2.2rem;
+            }
+            
+            .title-accent {
+                font-size: 2.5rem;
+            }
+            
+            .title-sub {
+                font-size: 1rem;
+            }
+        }
+
+        @keyframes titleAppear {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-item {
+            animation: fadeIn 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-item:nth-child(1) { animation-delay: 0.1s; }
+        .file-item:nth-child(2) { animation-delay: 0.2s; }
+        .file-item:nth-child(3) { animation-delay: 0.3s; }
+        .file-item:nth-child(4) { animation-delay: 0.4s; }
+        .file-item:nth-child(5) { animation-delay: 0.5s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="modern-title">
+            <span class="title-main">Mehrab's</span>
+            <span class="title-accent">Dumpyard</span>
+            <div class="title-sub">File Repository</div>
+        </div>
+
+        <ul id="file-list">
+            <li class="loading">Loading files...</li>
+        </ul>
+    </div>
+
+    <script>
+        async function fetchFiles() {
+            try {
+                const username = "rimehrab";
+                const repoName = "dumpyard";
+                const branchName = "files";
+                const apiUrl = `https://api.github.com/repos/${username}/${repoName}/contents?ref=${branchName}`;
+
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const data = await response.json();
+                const fileList = document.getElementById('file-list');
+                fileList.innerHTML = '';
+
+                if (data.length === 0) {
+                    fileList.innerHTML = '<li class="error">No files found</li>';
+                    return;
+                }
+
+                data.forEach((file, index) => {
+                    const li = document.createElement('li');
+                    li.classList.add('file-item');
+                    li.style.animationDelay = `${index * 0.1}s`;
+                    
+                    li.innerHTML = `
+                        <a href="https://raw.githubusercontent.com/${username}/${repoName}/${branchName}/${file.path}" target="_blank" rel="noopener noreferrer">
+                            <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span class="file-name">${file.name}</span>
+                            <svg class="external-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </a>
+                    `;
+                    
+                    fileList.appendChild(li);
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                const fileList = document.getElementById('file-list');
+                fileList.innerHTML = '<li class="error">⚠️ Failed to load files</li>';
+            }
+        }
+
+        window.addEventListener('load', fetchFiles);
+    </script>
+</body>
+  </html>
+  
